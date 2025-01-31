@@ -77,7 +77,8 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'smart_health_care.urls'
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",  # Allow frontend URL 
+    "http://localhost:5173",
+    "https://smart-health-care-web.netlify.app/",
 ]
 
 CORS_ALLOW_CREDENTIALS = True
