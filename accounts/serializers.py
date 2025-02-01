@@ -2,7 +2,7 @@ from rest_framework import serializers
 from .models import CustomUser, Patient, Doctor, Hospital
 from django.core.exceptions import ValidationError
 from dj_rest_auth.registration.serializers import RegisterSerializer
-from dj_rest_auth.serializers import PasswordChangeSerializer
+from dj_rest_auth.serializers import PasswordChangeSerializer, UserDetailsSerializer
 from filterings.models import Specialization
 
 class CustomRegisterSerializer(RegisterSerializer):
@@ -49,14 +49,19 @@ class CustomPasswordChangeSerializer(PasswordChangeSerializer):
             raise serializers.ValidationError("The old password is incorrect.")
         return value
     
-class UserSerializer(serializers.ModelSerializer):
+# class UserSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model= CustomUser
+#         fields= ['username', 'first_name', 'last_name', 'email', 'role', 'profile_image']
+#         extra_kwargs = {'profile_image': {'required': False}}
+#     def update(self, instance, validated_data):
+#     # Retain the existing profile image if not provided in the request
+#         profile_image = validated_data.get('profile_image', None)
+#         if profile_image is None:  # If no new image is uploaded
+#             validated_data['profile_image'] = instance.profile_image
+#         return super().update(instance, validated_data)
+
+class CustomUserDetailSerializer(UserDetailsSerializer):
     class Meta:
         model= CustomUser
-        fields= ['username', 'first_name', 'last_name', 'email', 'role', 'profile_image']
-        extra_kwargs = {'profile_image': {'required': False}}
-    def update(self, instance, validated_data):
-    # Retain the existing profile image if not provided in the request
-        profile_image = validated_data.get('profile_image', None)
-        if profile_image is None:  # If no new image is uploaded
-            validated_data['profile_image'] = instance.profile_image
-        return super().update(instance, validated_data)
+        fields= ['first_name', 'last_name', 'email', 'role', 'profile_image']

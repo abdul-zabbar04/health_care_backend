@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from .models import Patient, Doctor, Hospital, CustomUser
-from .serializers import PatientProfileSerializer, DoctorProfileSerializer, HospitalProfileSerializer, CustomRegisterSerializer, UserSerializer
+from .serializers import PatientProfileSerializer, DoctorProfileSerializer, HospitalProfileSerializer, CustomRegisterSerializer
 from dj_rest_auth.registration.views import RegisterView, ConfirmEmailView
 from allauth.account.models import EmailAddress
 from django.http import JsonResponse
@@ -74,9 +74,9 @@ class HospitalProfileView(RetrieveUpdateDestroyAPIView):
     def get_object(self):
         return Hospital.objects.get(user=self.request.user)
     
-class UserView(RetrieveUpdateDestroyAPIView):
-    serializer_class = UserSerializer
-    permission_classes = [IsAuthenticated]
+# class UserView(RetrieveUpdateDestroyAPIView):
+#     serializer_class = UserSerializer
+#     permission_classes = [IsAuthenticated]
 
-    def get_object(self):
-        return self.request.user
+#     def get_object(self):
+#         return self.request.user
