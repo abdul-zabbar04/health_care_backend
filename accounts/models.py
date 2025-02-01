@@ -15,8 +15,8 @@ class CustomUser(AbstractUser):
     )
     role= models.CharField(max_length=10, choices=ROLES, null=True, blank=True)
     email = models.EmailField(unique=True)
-    profile_image= models.ImageField(upload_to='profile_images/', blank=True, null=True, default='profile_images/default.png')
-
+    # profile_image= models.ImageField(upload_to='profile_images/', blank=True, null=True, default='profile_images/default.png')
+    profile_image = models.URLField(max_length=500, blank=True, null=True, default="https://i.ibb.co.com/0R4xM5rk/default.png")
     # Ensure email is used for authentication
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
