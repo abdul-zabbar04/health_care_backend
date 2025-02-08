@@ -29,7 +29,7 @@ class DoctorProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Doctor
         fields = ['BMDC_number', 'degrees', 'specialization', 'hospital_name', 'experience', 'biography', 'meeting_link']
-        # depth=1
+        depth=1
 
 class HospitalProfileSerializer(serializers.ModelSerializer):
     class Meta:
