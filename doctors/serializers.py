@@ -30,7 +30,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Appointment
-        fields = ['id', 'patient', 'doctor', 'appointment_date', 'reason', 'status', 'is_paid', 'medical_report']
+        fields = ['id', 'patient', 'doctor', 'appointment_date', 'reason', 'status', 'is_paid']
         read_only_fields = ['status', 'is_paid']
 
     def validate(self, data):
@@ -47,11 +47,11 @@ class AppointmentSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("This appointment already exists.")
         return data
     
-    def validate_medical_report(self, value):
-        max_file_size = 2 * 1024 * 1024  # 2 MB
-        if value:
-            if value.size > max_file_size:
-                raise serializers.ValidationError("The uploaded file exceeds the size limit of 2 MB.")
-            if not value.name.endswith('.pdf'):
-                raise serializers.ValidationError("Only PDF files are allowed for the medical report.")
-        return value
+    # def validate_medical_report(self, value):
+    #     max_file_size = 2 * 1024 * 1024  # 2 MB
+    #     if value:
+    #         if value.size > max_file_size:
+    #             raise serializers.ValidationError("The uploaded file exceeds the size limit of 2 MB.")
+    #         if not value.name.endswith('.pdf'):
+    #             raise serializers.ValidationError("Only PDF files are allowed for the medical report.")
+    #     return value
