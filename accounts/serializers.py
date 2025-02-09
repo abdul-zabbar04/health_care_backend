@@ -26,10 +26,12 @@ class PatientProfileSerializer(serializers.ModelSerializer):
 
 
 class DoctorProfileSerializer(serializers.ModelSerializer):
+    specialization_name = serializers.CharField(source='specialization.name', read_only=True)  # Read-only field
+    specialization = serializers.PrimaryKeyRelatedField(queryset=Specialization.objects.all())  # Accepts ID
     class Meta:
         model = Doctor
-        fields = ['BMDC_number', 'degrees', 'specialization', 'hospital_name', 'experience', 'biography', 'meeting_link']
-        # depth=1
+        fields = ['BMDC_number', 'degrees', 'specialization', 'specialization_name', 'hospital_name', 'experience', 'biography', 'meeting_link']
+    
 
 class HospitalProfileSerializer(serializers.ModelSerializer):
     class Meta:
