@@ -31,12 +31,19 @@ from .models import Appointment
 class AppointmentSerializer(serializers.ModelSerializer):
     patient = serializers.PrimaryKeyRelatedField(queryset=Patient.objects.all(), required=False)
     doctor = serializers.PrimaryKeyRelatedField(queryset=Doctor.objects.all())
+    patient_name = serializers.SerializerMethodField()
+    doctor_name = serializers.SerializerMethodField()
     appointment_time = serializers.ChoiceField(choices=Appointment.TIME_SLOTS)  # Time slot selection
 
     class Meta:
         model = Appointment
-        fields = ['id', 'patient', 'doctor', 'appointment_date', 'appointment_time', 'reason', 'status', 'is_paid']
+        fields = ['id', 'patient', 'doctor', 'patient_name', 'doctor_name', 'appointment_date', 'appointment_time', 'reason', 'status', 'is_paid']
         read_only_fields = ['status', 'is_paid']
+
+    def get_doctor_name(self, obj):
+        return f"{obj.doctor.user.first_name} {obj.doctor.user.last_name}"
+    def get_patient_name(self, obj):
+        return f"{obj.patient.user.first_name} {obj.patient.user.last_name}"
 
     def validate(self, data):
         # Ensure the appointment date is not in the past
