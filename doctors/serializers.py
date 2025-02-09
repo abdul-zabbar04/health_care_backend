@@ -24,13 +24,18 @@ class GetDoctorSerializer(serializers.ModelSerializer):
 
 
 # Appointment Section:
+from rest_framework import serializers
+from django.utils.timezone import now
+from .models import Appointment
+
 class AppointmentSerializer(serializers.ModelSerializer):
-    patient = serializers.PrimaryKeyRelatedField(queryset=Patient.objects.all())
+    patient = serializers.PrimaryKeyRelatedField(queryset=Patient.objects.all(), required=False)
     doctor = serializers.PrimaryKeyRelatedField(queryset=Doctor.objects.all())
+    appointment_time = serializers.ChoiceField(choices=Appointment.TIME_SLOTS)  # Time slot selection
 
     class Meta:
         model = Appointment
-        fields = ['id', 'patient', 'doctor', 'appointment_date', 'reason', 'status', 'is_paid']
+        fields = ['id', 'patient', 'doctor', 'appointment_date', 'appointment_time', 'reason', 'status', 'is_paid']
         read_only_fields = ['status', 'is_paid']
 
     def validate(self, data):
@@ -38,14 +43,16 @@ class AppointmentSerializer(serializers.ModelSerializer):
         if data['appointment_date'] < now().date():
             raise serializers.ValidationError("Appointment date cannot be in the past.")
         
-        # Check for conflicts (e.g., existing appointment at the same time)
+        # Ensure the appointment is not booked at the same time slot for the same patient
         if Appointment.objects.filter(
             patient=data['patient'], 
-            doctor=data['doctor'], 
-            appointment_date=data['appointment_date']
+            appointment_date=data['appointment_date'], 
+            appointment_time=data['appointment_time']
         ).exists():
-            raise serializers.ValidationError("This appointment already exists.")
+            raise serializers.ValidationError("You already have an appointment at this time slot.")
+
         return data
+
     
     # def validate_medical_report(self, value):
     #     max_file_size = 2 * 1024 * 1024  # 2 MB

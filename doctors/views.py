@@ -51,6 +51,10 @@ class AppointmentListView(generics.ListAPIView):
         return Appointment.objects.filter(patient=patient)
     
 
+from rest_framework import generics, permissions
+from .models import Appointment, Patient, Doctor
+from .serializers import AppointmentSerializer
+
 class CreateAppointment(generics.CreateAPIView):
     """
     - POST: Create an appointment for the logged-in patient with a specific doctor.
@@ -60,7 +64,7 @@ class CreateAppointment(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         # Get the logged-in user (patient)
-        patient= Patient.objects.get(user= self.request.user)
+        patient = Patient.objects.get(user=self.request.user)
 
         # Get the doctor from the URL
         doctor = Doctor.objects.get(id=self.kwargs['doctor_id'])
@@ -73,6 +77,7 @@ class CreateAppointment(generics.CreateAPIView):
         Optionally, restrict the returned appointments to the logged-in user.
         """
         return Appointment.objects.filter(patient=self.request.user.patient)
+
 
 class AppointmentDetailView(generics.RetrieveDestroyAPIView):
     """

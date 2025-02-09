@@ -22,14 +22,14 @@ class CustomRegisterSerializer(RegisterSerializer):
 class PatientProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Patient
-        fields = ['age', 'gender', 'height_ft', 'height_in', 'weight_kg']
+        fields = ['id', 'age', 'gender', 'height_ft', 'height_in', 'weight_kg']
 
 
 class DoctorProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Doctor
         fields = ['BMDC_number', 'degrees', 'specialization', 'hospital_name', 'experience', 'biography', 'meeting_link']
-        depth=1
+        # depth=1
 
 class HospitalProfileSerializer(serializers.ModelSerializer):
     class Meta:
