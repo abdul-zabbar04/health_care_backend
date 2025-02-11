@@ -30,7 +30,7 @@ class DoctorProfileSerializer(serializers.ModelSerializer):
     specialization = serializers.PrimaryKeyRelatedField(queryset=Specialization.objects.all())  # Accepts ID
     class Meta:
         model = Doctor
-        fields = ['BMDC_number', 'degrees', 'specialization', 'specialization_name', 'hospital_name', 'experience', 'biography', 'meeting_link']
+        fields = ['BMDC_number', 'degrees', 'fee', 'health_concern', 'specialization', 'specialization_name', 'hospital_name', 'experience', 'biography', 'meeting_link']
     
 
 class HospitalProfileSerializer(serializers.ModelSerializer):

@@ -37,8 +37,8 @@ class AppointmentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Appointment
-        fields = ['id', 'patient', 'doctor', 'patient_name', 'doctor_name', 'appointment_date', 'appointment_time', 'reason', 'status', 'meeting_link', 'is_paid']
-        read_only_fields = ['status', 'is_paid', 'meeting_link']
+        fields = ['id', 'patient', 'doctor', 'patient_name', 'doctor_name', 'appointment_date', 'appointment_time', 'reason', 'status', 'meeting_link', 'fee', 'is_paid']
+        read_only_fields = ['status', 'is_paid', 'meeting_link', 'fee']
 
     def get_doctor_name(self, obj):
         return f"{obj.doctor.user.first_name} {obj.doctor.user.last_name}"

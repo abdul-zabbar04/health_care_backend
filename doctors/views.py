@@ -6,7 +6,8 @@ from .serializers import GetDoctorSerializer, AppointmentSerializer
 from rest_framework.exceptions import ValidationError
 from .models import Appointment
 from accounts.permissions import IsPatient, IsDoctor
-
+from rest_framework.permissions import IsAuthenticated
+from rest_framework import generics, permissions
 
 
 
@@ -20,6 +21,56 @@ class DoctorListView(APIView):
         except:
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(serializer.data)
+    
+
+class SpecialistDoctorListView(APIView):
+    serializer_class = GetDoctorSerializer
+
+    def get(self, request, specialization_id):
+        try:
+            # Filter doctors based on the specialization ID
+            doctor_list = Doctor.objects.filter(
+                next_verification=True,
+                specialization__id=specialization_id
+            )
+
+            # Serialize the data
+            serializer = GetDoctorSerializer(doctor_list, many=True)
+
+            # If no doctors are found, return HTTP 204 No Content
+            if not doctor_list.exists():
+                return Response(status=status.HTTP_204_NO_CONTENT)
+
+            return Response(serializer.data)
+
+        except Exception as e:
+            # In case of error, return HTTP 500 Internal Server Error
+            return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class HealthConcernDoctorListView(APIView):
+    serializer_class = GetDoctorSerializer
+
+    def get(self, request, health_concern_id):
+        try:
+            # Filter doctors based on the specialization ID
+            doctor_list = Doctor.objects.filter(
+                next_verification=True,
+                health_concern_id=health_concern_id
+            )
+
+            # Serialize the data
+            serializer = GetDoctorSerializer(doctor_list, many=True)
+
+            # If no doctors are found, return HTTP 204 No Content
+            if not doctor_list.exists():
+                return Response(status=status.HTTP_204_NO_CONTENT)
+
+            return Response(serializer.data)
+
+        except Exception as e:
+            # In case of error, return HTTP 500 Internal Server Error
+            return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
     
 class DoctorDetailView(APIView):
     serializer_class= GetDoctorSerializer
@@ -49,11 +100,6 @@ class AppointmentListView(generics.ListAPIView):
         """
         patient= Patient.objects.get(user= self.request.user)
         return Appointment.objects.filter(patient=patient)
-    
-
-from rest_framework import generics, permissions
-from .models import Appointment, Patient, Doctor
-from .serializers import AppointmentSerializer
 
 class CreateAppointment(generics.CreateAPIView):
     """
@@ -128,7 +174,7 @@ class DoctorAppointmentsView(generics.ListAPIView):
         """
         # doctor_id = self.kwargs.get('doctor_id')
         doctor= Doctor.objects.get(user= self.request.user)
-        return Appointment.objects.filter(doctor=doctor)
+        return Appointment.objects.filter(doctor=doctor, is_paid= True)
 
 # Optional: Cancel Appointment Endpoint (If needed as a separate endpoint)
 class CancelAppointmentView(APIView):
@@ -150,4 +196,54 @@ class CancelAppointmentView(APIView):
         except Appointment.DoesNotExist:
             return Response({"error": "Appointment not found."}, status=404)
 
-    
+class DoctorAppointmentCompleteView(APIView):
+    permission_classes = [IsAuthenticated, IsDoctor]
+
+    def post(self, request, appointment_id, *args, **kwargs):
+        try:
+            # Fetch the appointment by ID
+            appointment = Appointment.objects.get(id=appointment_id)
+            
+           
+            # Check the current status and update it to 'Completed'
+            if appointment.status == 'Confirmed':
+                appointment.status = 'Completed'
+            else:
+                return Response({"detail": "Appointment status is already completed."}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Save the updated appointment
+            appointment.save()
+
+            # Return the updated appointment data
+            serializer = AppointmentSerializer(appointment)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        except Appointment.DoesNotExist:
+            return Response({"detail": "Appointment not found."}, status=status.HTTP_404_NOT_FOUND)
+
+
+class PaymentView(APIView):
+    permission_classes = [IsAuthenticated, IsPatient]
+
+    def post(self, request, appointment_id, *args, **kwargs):
+        try:
+            # Fetch the appointment by ID
+            appointment = Appointment.objects.get(id=appointment_id)
+                       
+            # Check the current status and update it to 'Completed'
+            if appointment.status == 'Pending':
+                appointment.status = 'Confirmed'
+                appointment.is_paid= True
+                
+            elif appointment.status == 'Confirmed':
+                return Response({"detail": "Already Paid."}, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                return Response({"detail": "Already completed."}, status=status.HTTP_400_BAD_REQUEST)
+            
+            appointment.save()
+
+            # Return the updated appointment data
+            serializer = AppointmentSerializer(appointment)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Appointment.DoesNotExist:
+            return Response({"detail": "Appointment not found."}, status=status.HTTP_404_NOT_FOUND)

@@ -3,7 +3,7 @@ from django.contrib.auth.models import AbstractUser
 from multiselectfield import MultiSelectField
 from django.core.exceptions import ValidationError
 import re
-from filterings.models import Specialization, District, Sub_district
+from filterings.models import Specialization, District, Sub_district, HealthConcern
 
 # Create your models here.
 
@@ -64,6 +64,8 @@ class Doctor(models.Model):
     BMDC_number = models.CharField(max_length=100, null=True, blank=True)
     degrees = models.CharField(max_length=100, null=True, blank=True)
     specialization= models.ForeignKey(Specialization, on_delete=models.CASCADE, null=True, blank=True)
+    health_concern= models.ForeignKey(HealthConcern, on_delete=models.CASCADE, null=True, blank=True)
+    fee = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     experience= models.IntegerField(null=True, blank=True)
     # patient_checked= models.IntegerField(null=True, blank=True)
     hospital_name= models.CharField(max_length=50, null=True, blank=True)
