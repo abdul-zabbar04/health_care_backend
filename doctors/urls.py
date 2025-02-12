@@ -10,6 +10,9 @@ from .views import (
     PaymentView,
     SpecialistDoctorListView,
     HealthConcernDoctorListView,
+    InitialPayment,
+    SuccessPayment,
+    FailPayment
 )
 
 
@@ -27,6 +30,9 @@ urlpatterns += [
     path('appointments/doctor/', DoctorAppointmentsView.as_view(), name='doctor-appointments'),
     path('appointments/doctor/<int:appointment_id>/', DoctorAppointmentCompleteView.as_view(), name='doctor-appointment-complete'),
     path('appointments/payment/<int:appointment_id>/', PaymentView.as_view(), name='payment'),
+    path('payment/<int:appointment_id>/', InitialPayment, name='initial-payment'),
+    path('payment/<int:appointment_id>/success', SuccessPayment.as_view(), name='success-payment'),
+    path('payment/fail/', FailPayment.as_view(), name='fail-payment'),
     path('appointments/create/<int:doctor_id>/', CreateAppointment.as_view(), name='create-appointments'),
     path('appointments/<int:pk>/cancel/', CancelAppointmentView.as_view(), name='appointment-cancel'),
 ]

@@ -8,6 +8,8 @@ from .models import Appointment
 from accounts.permissions import IsPatient, IsDoctor
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import generics, permissions
+from sslcommerz_lib import SSLCOMMERZ
+from django.views.decorators.csrf import csrf_exempt
 
 
 
@@ -247,3 +249,92 @@ class PaymentView(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Appointment.DoesNotExist:
             return Response({"detail": "Appointment not found."}, status=status.HTTP_404_NOT_FOUND)
+
+import uuid
+
+def generate_transaction_id():
+    # Generate a unique transaction ID using UUID
+    transaction_id = str(uuid.uuid4())
+    return transaction_id
+
+from django.shortcuts import redirect
+from rest_framework.decorators import api_view
+
+
+@api_view(['GET'])
+def InitialPayment(request, appointment_id):
+    try:
+        # Get appointment details using the provided appointment_id
+        appointment = Appointment.objects.get(id=appointment_id)
+    except Appointment.DoesNotExist:
+        # If appointment doesn't exist, return an error response
+        return Response({"detail": "Appointment not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    # SSLCommerz configuration
+    settings = {
+        'store_id': 'healt67aadebb20d99',  # Store ID for SSLCommerz
+        'store_pass': 'healt67aadebb20d99@ssl',  # Store Password for SSLCommerz
+        'issandbox': True  # Set to False for live environment
+    }
+    
+    sslcz = SSLCOMMERZ(settings)
+    
+    post_body = {
+        'total_amount': appointment.fee,  # Appointment fee
+        'currency': 'BDT',  # Currency
+        'tran_id': generate_transaction_id(),  # Unique transaction ID
+        'success_url': f"https://health-care-nine-indol.vercel.app/api/doctor/payment/{appointment_id}/success",  # Redirect URL after success
+        'fail_url': 'https://health-care-nine-indol.vercel.app/api/doctor/payment/fail/',  # Redirect URL after failure
+        'cancel_url': 'https://health-care-nine-indol.vercel.app/api/doctor/payment/fail/',  # Redirect URL after cancel
+        'emi_option': 0,
+        'cus_name': f"{appointment.patient.user.first_name} {appointment.patient.user.last_name}",  # Patient's full name
+        'cus_email': appointment.patient.user.email,  # Patient's email
+        'cus_phone': "01700000000",  
+        'cus_add1': "customer address",  
+        'cus_city': "Dhaka",  
+        'cus_country': "Bangladesh",  
+        'shipping_method': "NO",
+        'multi_card_name': "",
+        'num_of_item': 1,
+        'product_name': "Doctor Appointment",  
+        'product_category': "Test Category",  
+        'product_profile': "general" 
+    }
+    response = sslcz.createSession(post_body)
+    return Response({"GatewayPageURL": response['GatewayPageURL']}, status=status.HTTP_200_OK)
+
+from django.utils.decorators import method_decorator
+from django.shortcuts import get_object_or_404, HttpResponseRedirect
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class SuccessPayment(APIView):
+    def post(self, request, appointment_id):
+        appointment = get_object_or_404(Appointment, id=appointment_id)
+                    
+        if appointment.status == 'Pending':
+            appointment.status = 'Confirmed'
+            appointment.is_paid = True
+            appointment.save()
+            serializer = AppointmentSerializer(appointment)
+            # return Response(serializer.data, status=status.HTTP_200_OK)
+            frontend_url = f'https://smart-health-care-web.netlify.app/payment-success/{appointment.id}'  # Example URL, adjust as needed
+            return HttpResponseRedirect(frontend_url)
+
+        elif appointment.status == 'Confirmed':
+            return Response({"detail": "Already Paid."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        fail_page= 'https://smart-health-care-web.netlify.app/payment-fail'
+        HttpResponseRedirect(fail_page)
+        # return Response({"detail": "Invalid status."}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+class FailPayment(APIView):
+    def post(self, request):
+        print(id)
+        # Define the redirect URL
+        fail_page = 'https://smart-health-care-web.netlify.app/payment-fail'
+
+        # Return an HTTP response that redirects the user to the fail page
+        return HttpResponseRedirect(fail_page)
