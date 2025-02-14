@@ -53,3 +53,31 @@ class Appointment(models.Model):
     class Meta:
         ordering = ['appointment_date', 'appointment_time', 'created_at']
         unique_together = ('patient', 'appointment_date', 'appointment_time')  # Prevent duplicate time slots for same patient
+
+
+# Review Model
+
+REVIEWSTAR=[
+    ("★","★"),
+    ("★★","★★"),
+    ("★★★","★★★"),
+    ("★★★★","★★★★"),
+    ("★★★★★","★★★★★"),
+]
+
+class Review(models.Model):
+    doctor = models.ForeignKey(Doctor, on_delete=models.CASCADE, related_name="doctor", null=True, blank=True)
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='patient', null=True, blank=True)
+    patient_full_name = models.CharField(max_length=100, null=True, blank=True)
+    rating = models.CharField(max_length=10, choices=REVIEWSTAR)
+    body = models.TextField(max_length=100)
+    created_on = models.DateTimeField(auto_now_add=True)
+    
+    def save(self, *args, **kwargs):
+        # Automatically set the full name of the patient before saving
+        self.patient_full_name = f"{self.patient.user.first_name} {self.patient.user.last_name}"
+        super().save(*args, **kwargs)
+    
+    def __str__(self):
+        # Return full name dynamically in __str__ method
+        return f"{self.patient.user.first_name} reviewed {self.doctor.user.first_name}"

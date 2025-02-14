@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from accounts.models import CustomUser, Doctor, Patient
-from .models import Appointment
+from .models import Appointment, Review
 from django.utils.timezone import now
 
 
@@ -69,3 +69,12 @@ class AppointmentSerializer(serializers.ModelSerializer):
     #         if not value.name.endswith('.pdf'):
     #             raise serializers.ValidationError("Only PDF files are allowed for the medical report.")
     #     return value
+
+
+class ReviewSerializer(serializers.ModelSerializer):
+    patient = serializers.PrimaryKeyRelatedField(queryset=Patient.objects.all(), required=False)
+    doctor = serializers.PrimaryKeyRelatedField(queryset=Doctor.objects.all())
+    class Meta:
+        model= Review
+        fields= ['doctor', 'patient', 'patient_full_name', 'rating', 'body', 'created_on']
+        read_only_fields= ['patient_full_name', 'created_on']

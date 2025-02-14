@@ -2,9 +2,9 @@ from accounts.models import Doctor, Patient
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, generics, permissions
-from .serializers import GetDoctorSerializer, AppointmentSerializer
+from .serializers import GetDoctorSerializer, AppointmentSerializer, ReviewSerializer
 from rest_framework.exceptions import ValidationError
-from .models import Appointment
+from .models import Appointment, Review
 from accounts.permissions import IsPatient, IsDoctor
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import generics, permissions
@@ -338,3 +338,34 @@ class FailPayment(APIView):
 
         # Return an HTTP response that redirects the user to the fail page
         return HttpResponseRedirect(fail_page)
+    
+# Review View
+class ReviewView(generics.CreateAPIView):
+    serializer_class = ReviewSerializer
+    permission_classes = [permissions.IsAuthenticated, IsPatient]  # Ensure the user is a patient
+
+    def perform_create(self, serializer):
+        # Get the logged-in user (patient)
+        # patient = Patient.objects.get(user=self.request.user)
+        patient = get_object_or_404(Patient, user=self.request.user)
+
+        # Get the doctor from the URL
+        # doctor = Doctor.objects.get(id=self.kwargs['doctor_id'])
+        doctor = get_object_or_404(Doctor, id=self.kwargs['doctor_id'])
+
+        # Create the appointment
+        serializer.save(patient=patient, doctor=doctor)
+
+# Doctor review list
+class DoctorReviewsListView(generics.ListAPIView):
+    """
+    - GET: List all reviews for a specific doctor (Admin/Doctor users).
+    """
+    serializer_class = ReviewSerializer
+
+    def get_queryset(self):
+        """
+        Filter reviews for a specific doctor based on doctor id which is get from url.
+        """
+        doctor = get_object_or_404(Doctor, id=self.kwargs['doctor_id'])
+        return Review.objects.filter(doctor=doctor)
