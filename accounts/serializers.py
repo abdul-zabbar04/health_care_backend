@@ -67,3 +67,22 @@ class CustomUserDetailSerializer(UserDetailsSerializer):
     class Meta:
         model= CustomUser
         fields= ['first_name', 'last_name', 'email', 'role', 'profile_image']
+
+
+
+# serializers.py
+from dj_rest_auth.serializers import PasswordResetSerializer
+from django.urls import reverse
+
+class CustomPasswordResetSerializer(PasswordResetSerializer):
+    def get_email_options(self):
+        return {
+            'subject_template_name': 'account/email/password_reset_key_subject.txt',
+            'email_template_name': 'account/email/password_reset_key_message.txt',
+            'html_email_template_name': 'account/email/password_reset_key_message.html',
+            'extra_email_context': {
+                'password_reset_url': self.context['request'].build_absolute_uri(
+                    reverse('custom_password_reset_confirm', kwargs={'uidb64': 'UID', 'token': 'TOKEN'})  # Placeholder values
+                ),
+            },
+        }

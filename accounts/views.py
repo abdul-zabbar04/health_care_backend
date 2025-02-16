@@ -80,3 +80,10 @@ class HospitalProfileView(RetrieveUpdateDestroyAPIView):
 
 #     def get_object(self):
 #         return self.request.user
+
+
+from dj_rest_auth.views import PasswordResetView
+from .serializers import CustomPasswordResetSerializer  # Import your serializer
+
+class CustomPasswordResetView(PasswordResetView):
+    serializer_class = CustomPasswordResetSerializer
