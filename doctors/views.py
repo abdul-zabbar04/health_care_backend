@@ -7,22 +7,34 @@ from rest_framework.exceptions import ValidationError
 from .models import Appointment, Review
 from accounts.permissions import IsPatient, IsDoctor
 from rest_framework.permissions import IsAuthenticated
-from rest_framework import generics, permissions
+from rest_framework import generics, permissions, pagination
 from sslcommerz_lib import SSLCOMMERZ
 from django.views.decorators.csrf import csrf_exempt
 
 
 
 class DoctorListView(APIView):
-    serializer_class= GetDoctorSerializer
+    serializer_class = GetDoctorSerializer
     
     def get(self, request):
         try:
-            doctor_list= Doctor.objects.filter(next_verification= True)
-            serializer= GetDoctorSerializer(doctor_list, many= True)
-        except:
+            # Get the list of doctors with next_verification=True
+            doctor_list = Doctor.objects.filter(next_verification=True)
+            
+            # Create an instance of the paginator
+            paginator = pagination.PageNumberPagination()
+            # Paginate the queryset based on the request
+            paginated_doctors = paginator.paginate_queryset(doctor_list, request)
+            
+            # Serialize the paginated data
+            serializer = GetDoctorSerializer(paginated_doctors, many=True)
+            
+            # Return the paginated response
+            return paginator.get_paginated_response(serializer.data)
+        
+        except Exception as e:
+            # If there's any error, return a 204 No Content response
             return Response(status=status.HTTP_204_NO_CONTENT)
-        return Response(serializer.data)
     
 
 class SpecialistDoctorListView(APIView):
@@ -36,14 +48,20 @@ class SpecialistDoctorListView(APIView):
                 specialization__id=specialization_id
             )
 
-            # Serialize the data
-            serializer = GetDoctorSerializer(doctor_list, many=True)
+            # Create an instance of the paginator
+            paginator = pagination.PageNumberPagination()
+            # Paginate the queryset based on the request
+            paginated_doctors = paginator.paginate_queryset(doctor_list, request)
+
+            # Serialize the paginated data
+            serializer = GetDoctorSerializer(paginated_doctors, many=True)
 
             # If no doctors are found, return HTTP 204 No Content
-            if not doctor_list.exists():
+            if not paginated_doctors:
                 return Response(status=status.HTTP_204_NO_CONTENT)
 
-            return Response(serializer.data)
+            # Return the paginated response
+            return paginator.get_paginated_response(serializer.data)
 
         except Exception as e:
             # In case of error, return HTTP 500 Internal Server Error
@@ -54,25 +72,30 @@ class HealthConcernDoctorListView(APIView):
 
     def get(self, request, health_concern_id):
         try:
-            # Filter doctors based on the specialization ID
+            # Filter doctors based on the health concern ID
             doctor_list = Doctor.objects.filter(
                 next_verification=True,
                 health_concern_id=health_concern_id
             )
 
-            # Serialize the data
-            serializer = GetDoctorSerializer(doctor_list, many=True)
+            # Create an instance of the paginator
+            paginator = pagination.PageNumberPagination()
+            # Paginate the queryset based on the request
+            paginated_doctors = paginator.paginate_queryset(doctor_list, request)
 
-            # If no doctors are found, return HTTP 204 No Content
-            if not doctor_list.exists():
+            # Serialize the paginated data
+            serializer = GetDoctorSerializer(paginated_doctors, many=True)
+
+            # If no doctors are found in the paginated result, return HTTP 204 No Content
+            if not paginated_doctors:
                 return Response(status=status.HTTP_204_NO_CONTENT)
 
-            return Response(serializer.data)
+            # Return the paginated response
+            return paginator.get_paginated_response(serializer.data)
 
         except Exception as e:
             # In case of error, return HTTP 500 Internal Server Error
             return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
     
 class DoctorDetailView(APIView):
     serializer_class= GetDoctorSerializer
