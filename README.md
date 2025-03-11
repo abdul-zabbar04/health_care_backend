@@ -34,7 +34,4 @@ This is the **backend** of the Health Care platform, built using **Django REST F
 - **Payment Gateway**: SSLCommerz
 - **Hosting**: Vercel
 
-## 🚀 Setup Instructions
-1. Clone the repository:
-   ```sh
-   git clone <backend-repo-url>
+
