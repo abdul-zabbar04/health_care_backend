@@ -23,6 +23,7 @@ class DoctorListView(APIView):
             
             # Create an instance of the paginator
             paginator = pagination.PageNumberPagination()
+            paginator.page_size = 8
             # Paginate the queryset based on the request
             paginated_doctors = paginator.paginate_queryset(doctor_list, request)
             
@@ -50,6 +51,7 @@ class SpecialistDoctorListView(APIView):
 
             # Create an instance of the paginator
             paginator = pagination.PageNumberPagination()
+            paginator.page_size = 8
             # Paginate the queryset based on the request
             paginated_doctors = paginator.paginate_queryset(doctor_list, request)
 
@@ -80,6 +82,7 @@ class HealthConcernDoctorListView(APIView):
 
             # Create an instance of the paginator
             paginator = pagination.PageNumberPagination()
+            paginator.page_size = 8
             # Paginate the queryset based on the request
             paginated_doctors = paginator.paginate_queryset(doctor_list, request)
 
