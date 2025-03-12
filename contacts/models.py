@@ -11,3 +11,9 @@ class Contact(models.Model):
         return self.name
     class Meta:
         ordering= ['on_create']
+
+class Newsletter(models.Model):
+    email= models.EmailField()
+    on_create= models.DateTimeField(auto_now_add=True)
+    def __str__(self):
+        return self.email
