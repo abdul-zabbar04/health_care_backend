@@ -10,6 +10,8 @@ from django.http import JsonResponse
 from rest_framework.generics import RetrieveUpdateDestroyAPIView, ListAPIView, RetrieveUpdateAPIView
 from . import permissions
 from allauth.account.views import ConfirmEmailView
+from django.db.models import Q
+from doctors.models import Appointment
 
 class CustomRegisterView(RegisterView):
     serializer_class= CustomRegisterSerializer
@@ -87,3 +89,58 @@ from .serializers import CustomPasswordResetSerializer  # Import your serializer
 
 class CustomPasswordResetView(PasswordResetView):
     serializer_class = CustomPasswordResetSerializer
+
+from datetime import date, timedelta
+from .models import ViewCount
+from .serializers import ViewCountStatsSerializer
+
+class ViewCountStatsView(APIView):
+    def get(self, request, id):
+        today = date.today()
+        last_7_days = [today - timedelta(days=i) for i in range(6)]
+
+        # Aggregate the view counts for the last 7 days
+        stats = []
+        for day in last_7_days:
+            views_count = ViewCount.objects.filter(doctor= id, create_on=day).count()
+            stats.append({
+                "date": day,
+                "views_count": views_count
+            })
+
+        # Serialize the data
+        serializer = ViewCountStatsSerializer(stats, many=True)
+        return Response(serializer.data)
+
+from django.db.models import Sum
+from .serializers import DailyIncomeStatsSerializer
+
+class DailyIncomeStatsView(APIView):
+    def get(self, request, id):
+        today = date.today()
+        last_7_days = [today - timedelta(days=i) for i in range(7)]  # Includes today and last 6 days
+
+        stats = []
+        for day in last_7_days:
+            daily_income = Appointment.objects.filter(
+                doctor=id, 
+                is_paid=True,
+                created_at__date=day
+            ).aggregate(total_income=Sum('fee'))['total_income'] or 0
+
+            updated_income = Appointment.objects.filter(
+                doctor=id, 
+                is_paid=True,
+                updated_at__date=day
+            ).aggregate(total_income=Sum('fee'))['total_income'] or 0
+
+            total_income = daily_income + updated_income
+
+            stats.append({"date": day, "income": total_income})
+
+        serializer = DailyIncomeStatsSerializer(stats, many=True)
+        return Response({"doctor_id": id, "income_stats": serializer.data})
+
+
+
+

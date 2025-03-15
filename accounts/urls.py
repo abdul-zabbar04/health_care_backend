@@ -4,6 +4,8 @@ from .views import (
     PatientProfileView,
     DoctorProfileView,
     HospitalProfileView,
+    ViewCountStatsView,
+    DailyIncomeStatsView,
 )
 
 urlpatterns = [
@@ -11,6 +13,7 @@ urlpatterns = [
     path('patient-profile/', PatientProfileView.as_view(), name='patient_profile'), # get, edit, delete
     path('doctor-profile/', DoctorProfileView.as_view(), name='doctor_profile'),
     path('hospital-profile/', HospitalProfileView.as_view(), name='hospital_profile'),
-    # path('user/', UserView.as_view(), name='user_view'),
+    path('doctor/profile-views/<int:id>/', ViewCountStatsView.as_view(), name='doctor-profile-views'),
+    path('doctor/incomes/<int:id>/', DailyIncomeStatsView.as_view(), name='doctor-daily-income'),
 
 ]

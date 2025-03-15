@@ -81,8 +81,24 @@ class Doctor(models.Model):
     validators=[validate_meeting_link],
     help_text="Meeting link (Zoom or Google Meet only)")
     next_verification= models.BooleanField(default=False)
+    total_views= models.PositiveIntegerField(default=0, null=True, blank=True)
+    total_earned= models.PositiveIntegerField(default=0, null=True, blank=True)
+    current_balance= models.PositiveIntegerField(default=0, null=True, blank=True)
+    total_comments= models.PositiveIntegerField(default=0, null=True, blank=True)
+    total_appointments= models.PositiveIntegerField(default=0, null=True, blank=True)
     def __str__(self):
         return self.user.email
+    
+class ViewCount(models.Model):
+    user = models.ManyToManyField(CustomUser, blank=True)  # Multiple users can view a doctor
+    doctor = models.ForeignKey(Doctor, on_delete=models.CASCADE, related_name="view_count")
+    create_on = models.DateField(auto_now_add=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)  # For storing IP addresses of anonymous users
+
+    def __str__(self):
+        # Displaying the email of the first user in the view count, if exists
+        return f"{self.user.first().email if self.user.exists() else self.ip_address} viewed {self.doctor.user.email}"
+
 
 
 class Hospital(models.Model):
@@ -92,3 +108,4 @@ class Hospital(models.Model):
     
     def __str__(self):
         return self.user.email
+    

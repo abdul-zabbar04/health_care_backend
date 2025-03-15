@@ -30,8 +30,8 @@ class DoctorProfileSerializer(serializers.ModelSerializer):
     specialization = serializers.PrimaryKeyRelatedField(queryset=Specialization.objects.all())  # Accepts ID
     class Meta:
         model = Doctor
-        fields = ['BMDC_number', 'degrees', 'fee', 'health_concern', 'specialization', 'specialization_name', 'hospital_name', 'experience', 'biography', 'meeting_link']
-    
+        fields = ['id', 'BMDC_number', 'degrees', 'fee', 'health_concern', 'specialization', 'specialization_name', 'hospital_name', 'experience', 'biography', 'meeting_link', 'total_views', 'total_earned', 'current_balance', 'total_comments', 'total_appointments']
+        read_only_fields= ['id', 'total_views', 'total_earned', 'current_balance', 'total_comments', 'total_appointments']
 
 class HospitalProfileSerializer(serializers.ModelSerializer):
     class Meta:
@@ -86,3 +86,11 @@ class CustomPasswordResetSerializer(PasswordResetSerializer):
                 ),
             },
         }
+
+class ViewCountStatsSerializer(serializers.Serializer):
+    date = serializers.DateField()
+    views_count = serializers.IntegerField()
+
+class DailyIncomeStatsSerializer(serializers.Serializer):
+    date = serializers.DateField()
+    income = serializers.IntegerField()

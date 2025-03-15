@@ -1,4 +1,4 @@
-from accounts.models import Doctor, Patient
+from accounts.models import Doctor, Patient, ViewCount
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, generics, permissions
@@ -10,6 +10,9 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import generics, permissions, pagination
 from sslcommerz_lib import SSLCOMMERZ
 from django.views.decorators.csrf import csrf_exempt
+from datetime import date, timedelta
+from django.db.models import F
+
 
 
 
@@ -100,17 +103,51 @@ class HealthConcernDoctorListView(APIView):
             # In case of error, return HTTP 500 Internal Server Error
             return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
+def get_client_ip(request):
+    """Get client IP address."""
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        # If there are multiple IPs, the first one will be the client's real IP
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        # If there's no X-Forwarded-For header, use REMOTE_ADDR
+        ip = request.META.get('REMOTE_ADDR')
+    return ip
+
+
 class DoctorDetailView(APIView):
-    serializer_class= GetDoctorSerializer
-    
+    serializer_class = GetDoctorSerializer
+
     def get(self, request, pk):
         try:
-            doctor= Doctor.objects.get(next_verification= True, pk= pk)
-            serializer= GetDoctorSerializer(doctor)
-        except:
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        return Response(serializer.data)
-    
+            doctor = Doctor.objects.get(next_verification=True, pk=pk)
+            serializer = GetDoctorSerializer(doctor)
+
+            # Get user or IP for anonymous users
+            user = request.user if request.user.is_authenticated else None
+            ip_address = get_client_ip(request)
+            # Delete records older than 7 days to keep only last week's data
+            seven_days_ago = date.today() - timedelta(days=6)
+            ViewCount.objects.filter(create_on__lt=seven_days_ago).delete()
+
+            # Ensure unique view count per user or IP per day
+            if user:
+                view_exists = ViewCount.objects.filter(user=user, doctor=doctor, create_on=date.today()).exists()
+            else:
+                view_exists = ViewCount.objects.filter(ip_address=ip_address, doctor=doctor, create_on=date.today()).exists()
+
+            if not view_exists:
+                view = ViewCount.objects.create(doctor=doctor, create_on=date.today())
+                if user:
+                    view.user.add(user)  # Add user to ManyToMany field
+                else:
+                    view.ip_address = ip_address  # Save IP for anonymous users
+                    view.save()
+                Doctor.objects.filter(next_verification= True, pk=pk).update(total_views=F("total_views") + 1)
+
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Doctor.DoesNotExist:
+            return Response({"detail": "Doctor not found"}, status=status.HTTP_404_NOT_FOUND) 
 
 
 # Appointment views start here:
@@ -256,8 +293,7 @@ class PaymentView(APIView):
     def post(self, request, appointment_id, *args, **kwargs):
         try:
             # Fetch the appointment by ID
-            appointment = Appointment.objects.get(id=appointment_id)
-                       
+            appointment = Appointment.objects.get(id=appointment_id)        
             # Check the current status and update it to 'Completed'
             if appointment.status == 'Pending':
                 appointment.status = 'Confirmed'
@@ -269,6 +305,13 @@ class PaymentView(APIView):
                 return Response({"detail": "Already completed."}, status=status.HTTP_400_BAD_REQUEST)
             
             appointment.save()
+            doctor= appointment.doctor
+            doctor.total_appointments= Appointment.objects.filter(doctor= doctor, is_paid= True).count()
+            doctor.total_earned+= appointment.fee
+            doctor.current_balance+= appointment.fee
+            print(doctor.current_balance, doctor.total_earned, appointment.fee)
+            doctor.save()
+
 
             # Return the updated appointment data
             serializer = AppointmentSerializer(appointment)
@@ -378,7 +421,8 @@ class ReviewView(generics.CreateAPIView):
         # Get the doctor from the URL
         # doctor = Doctor.objects.get(id=self.kwargs['doctor_id'])
         doctor = get_object_or_404(Doctor, id=self.kwargs['doctor_id'])
-
+        doctor.total_comments= Review.objects.filter(doctor= doctor).count()
+        doctor.save()
         # Create the appointment
         serializer.save(patient=patient, doctor=doctor)
 

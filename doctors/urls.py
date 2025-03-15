@@ -14,7 +14,7 @@ from .views import (
     SuccessPayment,
     FailPayment,
     ReviewView,
-    DoctorReviewsListView
+    DoctorReviewsListView,
 )
 
 
@@ -24,6 +24,7 @@ urlpatterns = [
     path('list/specialization/<int:specialization_id>/', SpecialistDoctorListView.as_view(), name='specialist-doctor-list'),
     path('list/health_concern/<int:health_concern_id>/', HealthConcernDoctorListView.as_view(), name='health-concern-doctor-list'),
     path('list/<int:pk>/', DoctorDetailView.as_view(), name='doctor-detail'),
+    # path('doctor-views/<int:pk>/', DoctorDetailView.as_view(), name='doctor-detail'),
     path('review/<int:doctor_id>/', ReviewView.as_view(), name='review-create'),
     path('reviews/list/<int:doctor_id>/', DoctorReviewsListView.as_view(), name='review-list'),
 ]
