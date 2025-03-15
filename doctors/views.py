@@ -377,7 +377,7 @@ class SuccessPayment(APIView):
             appointment.is_paid = True
             
             # For tracking doctor balance
-            appointed_doctor = appointment.doctor
+            appointed_doctor = appointment.doctor.id
             doctor= Doctor.objects.get(id= appointed_doctor)
             print("This is docccccccccccccccccccccccccccctor", doctor)
             # Safely update total_appointments and financial fields
