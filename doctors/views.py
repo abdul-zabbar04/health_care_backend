@@ -304,19 +304,6 @@ class PaymentView(APIView):
             else:
                 return Response({"detail": "Already completed."}, status=status.HTTP_400_BAD_REQUEST)
 
-            appointed_doctor = appointment.doctor
-            doctor= Doctor.objects.get(id= appointed_doctor)
-            # Safely update total_appointments and financial fields
-            doctor.total_appointments = F('total_appointments') + 1
-            doctor.total_earned = F('total_earned') + appointment.fee
-            doctor.current_balance = F('current_balance') + appointment.fee
-
-            doctor.save(update_fields=['total_appointments', 'total_earned', 'current_balance'])
-            print(doctor.current_balance, doctor.total_earned, appointment.fee)
-            appointment.save()
-            doctor.save()
-
-
             # Return the updated appointment data
             serializer = AppointmentSerializer(appointment)
             return Response(serializer.data, status=status.HTTP_200_OK)
@@ -388,6 +375,22 @@ class SuccessPayment(APIView):
         if appointment.status == 'Pending':
             appointment.status = 'Confirmed'
             appointment.is_paid = True
+            
+            # For tracking doctor balance
+            appointed_doctor = appointment.doctor
+            doctor= Doctor.objects.get(id= appointed_doctor)
+            print("This is docccccccccccccccccccccccccccctor", doctor)
+            # Safely update total_appointments and financial fields
+            doctor.total_appointments = F('total_appointments') + 1
+            doctor.total_earned = F('total_earned') + appointment.fee
+            doctor.current_balance = F('current_balance') + appointment.fee
+            print(appointed_doctor, doctor.total_earned, "shtgs............................................")
+            doctor.save(update_fields=['total_appointments', 'total_earned', 'current_balance'])
+            print(doctor.current_balance, doctor.total_earned, appointment.fee)
+            appointment.save()
+            doctor.save()
+            print(doctor)
+
             appointment.save()
             serializer = AppointmentSerializer(appointment)
             # return Response(serializer.data, status=status.HTTP_200_OK)

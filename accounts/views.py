@@ -148,7 +148,7 @@ class DailyIncomeStatsView(APIView):
                     is_paid=True,
                     updated_at__date=day
                 )
-                .exclude(created_at__date=day)  # ✅ Prevents double counting
+                .exclude(created_at__date=day)  
                 .aggregate(total_income=Sum('fee'))['total_income'] or 0
             )
 
