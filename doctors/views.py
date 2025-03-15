@@ -11,7 +11,7 @@ from rest_framework import generics, permissions, pagination
 from sslcommerz_lib import SSLCOMMERZ
 from django.views.decorators.csrf import csrf_exempt
 from datetime import date, timedelta
-from django.db.models import F
+from django.db.models import F, Sum
 
 
 
@@ -237,8 +237,22 @@ class DoctorAppointmentsView(generics.ListAPIView):
         """
         Filter appointments for a specific doctor.
         """
+        
         # doctor_id = self.kwargs.get('doctor_id')
         doctor= Doctor.objects.get(user= self.request.user)
+        # Filter all paid appointments
+        appointments = Appointment.objects.filter(doctor=doctor, is_paid=True)
+
+        # Calculate total income
+        total_income = appointments.aggregate(total_income=Sum('fee'))['total_income'] or 0
+
+        # Update doctor details efficiently
+        Doctor.objects.filter(id=doctor.id).update(
+            total_appointments=F('total_appointments') + 1, 
+            total_earned=total_income,
+            current_balance=total_income
+        )
+
         return Appointment.objects.filter(doctor=doctor, is_paid= True)
 
 # Optional: Cancel Appointment Endpoint (If needed as a separate endpoint)
@@ -375,22 +389,6 @@ class SuccessPayment(APIView):
         if appointment.status == 'Pending':
             appointment.status = 'Confirmed'
             appointment.is_paid = True
-            
-            # For tracking doctor balance
-            appointed_doctor = appointment.doctor.id
-            doctor= Doctor.objects.get(id= appointed_doctor)
-            print("This is docccccccccccccccccccccccccccctor", doctor)
-            # Safely update total_appointments and financial fields
-            doctor.total_appointments = F('total_appointments') + 1
-            doctor.total_earned = F('total_earned') + appointment.fee
-            doctor.current_balance = F('current_balance') + appointment.fee
-            print(appointed_doctor, doctor.total_earned, "shtgs............................................")
-            doctor.save(update_fields=['total_appointments', 'total_earned', 'current_balance'])
-            print(doctor.current_balance, doctor.total_earned, appointment.fee)
-            appointment.save()
-            doctor.save()
-            print(doctor)
-
             appointment.save()
             serializer = AppointmentSerializer(appointment)
             # return Response(serializer.data, status=status.HTTP_200_OK)
