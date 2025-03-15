@@ -303,11 +303,9 @@ class PaymentView(APIView):
                 return Response({"detail": "Already Paid."}, status=status.HTTP_400_BAD_REQUEST)
             else:
                 return Response({"detail": "Already completed."}, status=status.HTTP_400_BAD_REQUEST)
-            
-            appointment.save()
 
-            doctor = appointment.doctor
-
+            appointed_doctor = appointment.doctor
+            doctor= Doctor.objects.get(id= appointed_doctor)
             # Safely update total_appointments and financial fields
             doctor.total_appointments = F('total_appointments') + 1
             doctor.total_earned = F('total_earned') + appointment.fee
@@ -315,6 +313,7 @@ class PaymentView(APIView):
 
             doctor.save(update_fields=['total_appointments', 'total_earned', 'current_balance'])
             print(doctor.current_balance, doctor.total_earned, appointment.fee)
+            appointment.save()
             doctor.save()
 
 
