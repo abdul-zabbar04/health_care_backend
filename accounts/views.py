@@ -113,23 +113,27 @@ class ViewCountStatsView(APIView):
         return Response(serializer.data)
 
 from django.db.models import Sum
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from datetime import date, timedelta 
+from django.shortcuts import get_object_or_404
 from .serializers import DailyIncomeStatsSerializer
+from .models import Doctor
+
 
 class DailyIncomeStatsView(APIView):
     def get(self, request, id):
-        today = date.today()
-        last_7_days = [today - timedelta(days=i) for i in range(7)]  # Includes today and last 6 days
+        # Ensure the doctor exists
+        doctor = get_object_or_404(Doctor, id=id)
 
-        stats = []
-        from django.db.models import Sum
-        from datetime import timedelta, date
-
-        last_7_days = [date.today() - timedelta(days=i) for i in range(6)]
+        # Get the last 7 days (including today)
+        today = date.today()  
+        last_7_days = [today - timedelta(days=i) for i in range(6)]  
 
         stats = []
 
         for day in last_7_days:
-            total_income = (
+            daily_income = (
                 Appointment.objects.filter(
                     doctor=id,
                     is_paid=True,
@@ -137,25 +141,25 @@ class DailyIncomeStatsView(APIView):
                 ).aggregate(total_income=Sum('fee'))['total_income'] or 0
             )
 
-            # Ensure we don't count the same appointment again if updated_at is the same day
-            total_income += (
+            # Ensure we don't double-count if created_at and updated_at are the same
+            updated_income = (
                 Appointment.objects.filter(
                     doctor=id,
                     is_paid=True,
                     updated_at__date=day
                 )
-                .exclude(created_at__date=day)  # Prevent double-counting
+                .exclude(created_at__date=day)  # ✅ Prevents double counting
                 .aggregate(total_income=Sum('fee'))['total_income'] or 0
             )
 
+            total_income = daily_income + updated_income
             stats.append({"date": day, "income": total_income})
 
-        print(stats)
+        print(stats)  # Debugging, remove in production
 
-
+        # Serialize and return response
         serializer = DailyIncomeStatsSerializer(stats, many=True)
         return Response({"doctor_id": id, "income_stats": serializer.data})
-
 
 
 
