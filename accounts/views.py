@@ -121,22 +121,37 @@ class DailyIncomeStatsView(APIView):
         last_7_days = [today - timedelta(days=i) for i in range(7)]  # Includes today and last 6 days
 
         stats = []
+        from django.db.models import Sum
+        from datetime import timedelta, date
+
+        last_7_days = [date.today() - timedelta(days=i) for i in range(6)]
+
+        stats = []
+
         for day in last_7_days:
-            daily_income = Appointment.objects.filter(
-                doctor=id, 
-                is_paid=True,
-                created_at__date=day
-            ).aggregate(total_income=Sum('fee'))['total_income'] or 0
+            total_income = (
+                Appointment.objects.filter(
+                    doctor=id,
+                    is_paid=True,
+                    created_at__date=day
+                ).aggregate(total_income=Sum('fee'))['total_income'] or 0
+            )
 
-            updated_income = Appointment.objects.filter(
-                doctor=id, 
-                is_paid=True,
-                updated_at__date=day
-            ).aggregate(total_income=Sum('fee'))['total_income'] or 0
-
-            total_income = daily_income + updated_income
+            # Ensure we don't count the same appointment again if updated_at is the same day
+            total_income += (
+                Appointment.objects.filter(
+                    doctor=id,
+                    is_paid=True,
+                    updated_at__date=day
+                )
+                .exclude(created_at__date=day)  # Prevent double-counting
+                .aggregate(total_income=Sum('fee'))['total_income'] or 0
+            )
 
             stats.append({"date": day, "income": total_income})
+
+        print(stats)
+
 
         serializer = DailyIncomeStatsSerializer(stats, many=True)
         return Response({"doctor_id": id, "income_stats": serializer.data})
