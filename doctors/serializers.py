@@ -3,8 +3,6 @@ from accounts.models import CustomUser, Doctor, Patient
 from .models import Appointment, Review
 from django.utils.timezone import now
 
-
-
 # For getting user details in doctor or patient or hospital
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -12,16 +10,12 @@ class UserSerializer(serializers.ModelSerializer):
         fields= ['username', 'first_name', 'last_name', 'email', 'profile_image', 'last_login', 'date_joined']
 
 class GetDoctorSerializer(serializers.ModelSerializer):
-    # working_days = serializers.ListField(
-    #     child=serializers.CharField(max_length=10),
-    #     allow_empty=False
-    # ) # to handle list type input
     user= UserSerializer()
+    specialization= serializers.CharField(source='specialization.name', read_only=True)
+    health_concern= serializers.CharField(source='health_concern.name', read_only=True)
     class Meta:
         model = Doctor
         fields = '__all__'
-        depth=1
-
 
 # Appointment Section:
 from rest_framework import serializers

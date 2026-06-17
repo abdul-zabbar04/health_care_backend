@@ -22,7 +22,13 @@ class DoctorListView(APIView):
     def get(self, request):
         try:
             # Get the list of doctors with next_verification=True
-            doctor_list = Doctor.objects.filter(next_verification=True)
+            doctor_list = Doctor.objects.filter(next_verification=True).select_related(
+                'specialization',
+                'health_concern',
+                'district',
+                'user',
+                'sub_district'
+                )
             
             # Create an instance of the paginator
             paginator = pagination.PageNumberPagination()
