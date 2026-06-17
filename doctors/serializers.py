@@ -13,6 +13,7 @@ class GetDoctorSerializer(serializers.ModelSerializer):
     user= UserSerializer()
     specialization= serializers.CharField(source='specialization.name', read_only=True)
     health_concern= serializers.CharField(source='health_concern.name', read_only=True)
+    district= serializers.CharField(source='district.name', read_only=True)
     class Meta:
         model = Doctor
         fields = '__all__'
