@@ -88,6 +88,10 @@ class Doctor(models.Model):
     total_appointments= models.PositiveIntegerField(default=0, null=True, blank=True)
     def __str__(self):
         return self.user.email
+    class Meta:
+        indexes = [
+            models.Index(fields=['next_verification']),
+        ]
     
 class ViewCount(models.Model):
     user = models.ManyToManyField(CustomUser, blank=True)  # Multiple users can view a doctor
